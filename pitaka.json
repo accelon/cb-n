@@ -1,0 +1,30 @@
+{
+    "name":"cb-n",
+    "title": "南傳大藏經|南傳",
+    "description":"基於CBETA DVD 2018",
+    "maintainer": "yapcheahshen@gmail.com",
+    "license": "CC0",
+    "format":"cbeta",
+    "cluster":"bk.c",
+    "locator":"v.p",
+    "milestones":"cst4pn/*.json",
+    "labels":{
+            "bk":["LabelBook",{"caption":"經號","resets":["c"]}], 
+            "v":["LabelVol",{"resets":["p"]}], 
+            "c":["LabelMilestone",{"caption":"卷","sequencial":true,"resets":["mu"]}],
+            "cs":"Label","csbk":"Label",
+            "p":"LabelPage", 
+            "mu":["LabelMulu",{"trimlocal":true}], 
+            "mc":["Label",{"caption":"缺字"}],
+            "h":"Label",
+            "w":["Label",{"caption":"巴利"}],
+            "lg":"Label",
+            "pr":["LabelKeyword",{"caption":"人名","master":"bk","sort":true}],
+            "er":["LabelKeyword",{"caption":"年代","master":"bk","sort":true}],
+            "bl":["LabelKeyword",{"caption":"部類","master":"bk"}],
+            "cs:bk":"Label"
+    },
+    "homepage":"https://github.com/accelon/cb-n",
+    "rootdir":"N/",
+    "files":"N0[678]/*"
+}

@@ -1,0 +1,21 @@
+{
+  "name": "cb-n",
+  "version": "1.0.0",
+  "description": "cbeta nanchuan",
+  "type":"module",
+  "main": "test-read.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://yapcheahshen@github.com/accelon/cb-n.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/accelon/cb-n/issues"
+  },
+  "homepage": "https://github.com/accelon/cb-n#readme"
+}
