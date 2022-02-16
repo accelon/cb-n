@@ -3,7 +3,7 @@ import {getFormat} from "pitaka/format"
 import { filesFromPattern, nodefs, writeChanged } from "pitaka/cli";
 await nodefs;
 const rootdir='N/';
-const pat=process.argv[2]||"N06/*"
+const pat=process.argv[2]||"N0[6789]/*,N1?/*,N2[012345]/*"
 const files=filesFromPattern(pat,'N');
 const cbeta=getFormat("cbeta");
 
@@ -22,7 +22,7 @@ const onOpen={
         ctx.vol=el.attrs['xml:id'].substr(1,2);
     },
     'p':(el,ctx)=>{
-        if (el.attrs["cb:place"]=="inline") return '※';
+        if (el.attrs["cb:place"]=="inline") return '§';
     },
 }
 const onClose={
