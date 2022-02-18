@@ -8,6 +8,7 @@ export const volOfBook={//6-8 DN, 9-12 MN,  13-18 SN, 19-25 AN
     dn:[6,7,8],
     dn1:6,// cross multiple vols, just for testing
     mn:[9,10,11,12],
+    sn1:[13],sn2:[14],sn3:[15],
     sn:[13,14,15,16,17,18],
     an:[19,20,21,22,23,24,25],
     kp:26,dhp:26,ud:26,iti:26, //小誦 法句 自說 如是語

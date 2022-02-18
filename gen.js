@@ -2,30 +2,31 @@
    
 */
 
-import { walkDOMOfftext,DOMFromString,xpath } from "pitaka/xmlparser";
-import {getFormat} from "pitaka/format"
-import { filesFromPattern, nodefs, readTextContent, writeChanged } from "pitaka/cli";
-import {getVols} from "./bookcode.js";
-import {autoChineseBreak} from "pitaka/utils"
-
+import { walkDOMOfftext,DOMFromString,xpath } from 'pitaka/xmlparser';
+import { filesFromPattern, nodefs, readTextContent, writeChanged } from 'pitaka/cli';
+import {getVols} from './bookcode.js';
+import {pinPos,posPin,patchBuf, autoChineseBreak,ensureClusterHasPN,isChineseNumber} from 'pitaka/utils';
+import {cbeta} from 'pitaka/format';
+import Errata from './errata.js';
 await nodefs;
 const rootdir='N/';
 const desfolder='off/';
 const bookcode=process.argv[2]||"dn1"
 const folders=getVols(bookcode).map(v=>'N'+v +'/*') ;
 const files=filesFromPattern( folders,'N');
-const cbeta=getFormat("cbeta");
 const {g}=cbeta.onOpen;
-const ctx={started:false,hide:0,isheader:true,header:'',paratext:'', lb:'' };
+const ctx={started:false,hide:0,isheader:true,header:'',paratext:'', lb:'', notes:[]};
 
 const bkpf=bookcode.replace(/\d+$/,'');
-const pnjson=JSON.parse(readTextContent('cst4pn/'+bkpf+'.json'));
+const pnjson=JSON.parse(readTextContent('inserts/'+bkpf+'.json').replace(/\/\/.+/g,''));
 let bkid=''; //currently output bkid; take from pnjson ^bk
-let lines=[];
+let outcontent='';
 const onText=(str,ctx)=>{
     if (!ctx.hide && ctx.started) {
         let t=str.trim();
-        if (ctx.isheader && t) {
+        if (ctx.isnote) {
+            ctx.notetext+=t;
+        } else if (ctx.isheader && t) {
             if (ctx.mululevel) {
                 ctx.header+='^z'+ctx.mululevel+'['+t+']';
                 ctx.mululevel=0;
@@ -33,22 +34,32 @@ const onText=(str,ctx)=>{
                 // ctx.header+='^h['+t+']';
             }
         }
-        else ctx.paratext+=t;
+        else {
+            if (ctx.compact && t.charCodeAt(0)<0x7f) ctx.paratext+=' ';
+            ctx.compact=false;
+            ctx.paratext+=t;
+        }
     }
 }
-const parseHook=(str,hook)=>{
-    return hook;//number now
-}
+
 const onOpen={
     g,
-    note:(el,ctx)=>ctx.hide++,
+    note:(el,ctx)=>{
+        ctx.isnote=true;
+        ctx.notetext='';
+    },
     milestone:(el,ctx)=>{ctx.started=true;},
     'pb':(el,ctx)=>{
         ctx.vol=el.attrs['xml:id'].substr(1,2);
     },
+    'l':(el,ctx)=>{
+        ctx.paratext+='\n^sz '
+    },
     'p':(el,ctx)=>{
         if (el.attrs["cb:place"]=="inline") {
-            ctx.paratext+='§';
+            if (isChineseNumber(ctx.paratext)) {
+                ctx.paratext='';
+            } else ctx.paratext+='§';
         }
     },
     'cb:mulu':(el,ctx)=>{if(ctx.started&&!ctx.hide) {
@@ -67,50 +78,75 @@ const onOpen={
         if (!insert&&!lbnow) return;
         if (lbnow && typeof lbnow!=='string') lbnow=lbnow[0];
         if (insert && typeof insert!=='string') {
-            insertpoint=parseHook(ctx.paratext, insert[1]);
+            insertpoint=posPin(ctx.paratext, insert[1]);
             insert=insert[0];
             if (insertpoint) insert='\n'+insert;
         }
-
         const text=ctx.paratext.substr(0,insertpoint)
             +(insert?insert:'')
             +ctx.paratext.substr(insertpoint);
-    
             const m=insert&&insert.match(/\^bk#([a-z\d]+)/);
         if(m) {
-            writeOutput();
+            if(bkid)writeOutput();
             bkid=m[1];
         }
+
         if (text) {
-            //make ^bk and ^n1 in same line
-            const newline=((insert||'').indexOf("^n1 ")===-1 && !insertpoint)?"\n":"";
-            lines.push( ((insert&&ctx.paratext)?newline+ctx.header:"")+text );
-            if (insert&&ctx.paratext) ctx.header='';
+            let emitnl=false;
+            if (insert&&insert.indexOf("^n")>-1) {
+                emitnl=true;
+            }
+            outcontent += (emitnl?("\n"+ctx.header):'')+text ;
+            if (emitnl) ctx.header='';
             ctx.paratext='';
         }
     }
 }
 const onClose={
-    note:(el,ctx)=>ctx.hide--,
+    note:(el,ctx)=>{
+        ctx.notes.push(ctx.notetext);
+        const notetag='^f'+ctx.notes.length;
+        if (ctx.isheader) {
+            ctx.header+=notetag;
+        } else if (ctx.paratext) {
+            ctx.paratext+=notetag;
+        }
+        ctx.compact=true;
+        ctx.notetext='';
+        ctx.isnote=false;
+    },
     'cb:mulu':(el,ctx)=>{ctx.isheader=false},
     'head':(el,ctx)=>{ctx.isheader=false},
     'body':()=>{ctx.started=false}
 };
+
 const writeOutput=()=>{
-    // lines=lines.map(autoChineseBreak);
-    if (bkid && writeChanged(desfolder+bkid+'.off.gen',lines.join(''))) {
+    if (!outcontent.length)return;
+    let lines=outcontent.split(/\r?\n/);    
+    lines=lines.map(autoChineseBreak);
+    if (bkid && writeChanged(desfolder+bkid+'.off',lines.join('\n').trim())) {
         console.log('written',bkid,lines.length);
     }
+    const notes=ctx.notes.map((t,idx)=>{
+        return '^fn'+(idx+1)+' '+t;
+    })
+    notes.unshift('^bk#'+bkid+'.notes');
+    if (bkid && writeChanged(desfolder+bkid+'.note.off',notes.join('\n'))){
+        //written note
+    }
     bkid='';
-    lines=[];
+    ctx.notes=[];
+    outcontent='';
 }
 
 
 files.forEach(file=>{
-    const buf=fs.readFileSync(rootdir+file,'utf8');
+    const buf=patchBuf(readTextContent(rootdir+file),Errata[file],file);
     const el=DOMFromString(buf);
     const body=xpath(el,'text/body');
     ctx.charmap=cbeta.buildCharmap(xpath(el,'teiHeader/encodingDesc/charDecl'));
     walkDOMOfftext(body,ctx,onOpen, onClose,onText).trim();
 });
+
 writeOutput();
+// writeChanged(bkpf+'.json.new',JSON.stringify(pnjson,'',' '))
