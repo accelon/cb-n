@@ -2,22 +2,14 @@
 	"name":"cb-n",
 	"title":"南傳大藏經|南傳",
 	"description":"基於CBETA DVD 2018",
-	"maintainer":"yapcheahshen@gmail.com",
-	"license":"CC0",
-	"cluster":"c",
-	"locator":"bk.n",
-	"textOnly":true,
-	"label":"cs,csbk,lg,z",
+	"template":"cs",
+    "lang":"zh",
+	"label":"csbk,lg,z,m",
 	"labels":{
-		"v":["LabelVol"], 
 		"p":["LabelPage",{"reset":"p"}], 
 		"mc":["Label",{"caption":"缺字"}],
-		"w":["Label",{"caption":"巴利"}],
-		"pr":["LabelKeyword",{"caption":"人名","master":"bk","sort":true}],
-		"er":["LabelKeyword",{"caption":"年代","master":"bk","sort":true}],
-		"bl":["LabelKeyword",{"caption":"部類","master":"bk"}]
+		"w":["Label",{"caption":"巴利"}]
 	},
 	"homepage":"https://github.com/accelon/cb-n",
-	"rootdir":"off/",
-	"files":"dn1.off,dn2.off,dn3.off"
+	"files":"dn?.off"
 }

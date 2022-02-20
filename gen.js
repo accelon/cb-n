@@ -5,7 +5,7 @@
 import { walkDOMOfftext,DOMFromString,xpath } from 'pitaka/xmlparser';
 import { filesFromPattern, nodefs, readTextContent, writeChanged } from 'pitaka/cli';
 import {getVols} from './bookcode.js';
-import {pinPos,posPin,patchBuf, autoChineseBreak,ensureClusterHasPN,isChineseNumber} from 'pitaka/utils';
+import {pinPos,posPin,patchBuf, autoChineseBreak,ensureChunkHasPN,fromChineseNumber} from 'pitaka/utils';
 import {cbeta} from 'pitaka/format';
 import Errata from './errata.js';
 await nodefs;
@@ -57,9 +57,12 @@ const onOpen={
     },
     'p':(el,ctx)=>{
         if (el.attrs["cb:place"]=="inline") {
-            if (isChineseNumber(ctx.paratext)) {
-                ctx.paratext='';
-            } else ctx.paratext+='§';
+            const cn=ctx.paratext.match(/([一二三四五六七八九十百千○〇]+)$/);
+            if (cn) {
+                ctx.paratext=ctx.paratext.substr(0,ctx.paratext.length-cn[1].length);
+                ctx.paratext+='^m'+fromChineseNumber(cn[1]);
+                ctx.compact=true;
+            }
         }
     },
     'cb:mulu':(el,ctx)=>{if(ctx.started&&!ctx.hide) {
@@ -94,6 +97,7 @@ const onOpen={
         if (text) {
             let emitnl=false;
             if (insert&&insert.indexOf("^n")>-1) {
+                ctx.compact=true;
                 emitnl=true;
             }
             outcontent += (emitnl?("\n"+ctx.header):'')+text ;
