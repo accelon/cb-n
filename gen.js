@@ -3,14 +3,16 @@
 */
 
 import { walkDOMOfftext,DOMFromString,xpath } from 'pitaka/xmlparser';
-import { filesFromPattern, nodefs, readTextContent, writeChanged } from 'pitaka/cli';
+import { filesFromPattern, nodefs, readTextContent, readTextLines, writeChanged } from 'pitaka/cli';
 import {getVols} from './bookcode.js';
-import {pinPos,posPin,patchBuf, autoChineseBreak,ensureChunkHasPN,fromChineseNumber} from 'pitaka/utils';
+import {pinPos,posPin,patchBuf, autoChineseBreak,ensureChunkHasPN,fromChineseNumber, autoBreak, toParagraphs} from 'pitaka/utils';
+import { autoAlign } from 'pitaka/utils';
 import {cbeta} from 'pitaka/format';
 import Errata from './errata.js';
 await nodefs;
 const rootdir='N/';
 const desfolder='off/';
+const scfolder='../sc/pli/'
 const bookcode=process.argv[2]||"dn1"
 const folders=getVols(bookcode).map(v=>'N'+v +'/*') ;
 const files=filesFromPattern( folders,'N');
@@ -127,8 +129,10 @@ const onClose={
 const writeOutput=()=>{
     if (!outcontent.length)return;
     let lines=outcontent.split(/\r?\n/);    
-    lines=lines.map(autoChineseBreak);
-    if (bkid && writeChanged(desfolder+bkid+'.off',lines.join('\n').trim())) {
+    lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
+    const sclines=readTextLines(scfolder+bkid+'.off');
+    lines=autoAlign(lines,sclines);
+    if (bkid && writeChanged(desfolder+bkid+'.off',lines.join('\n'))) {
         console.log('written',bkid,lines.length);
     }
     const notes=ctx.notes.map((t,idx)=>{
