@@ -5,18 +5,21 @@
 import { walkDOMOfftext,DOMFromString,xpath } from 'pitaka/xmlparser';
 import { filesFromPattern, nodefs, readTextContent, readTextLines, writeChanged } from 'pitaka/cli';
 import {getVols} from './bookcode.js';
-import {pinPos,posPin,patchBuf, autoChineseBreak,ensureChunkHasPN,fromChineseNumber, autoBreak, toParagraphs} from 'pitaka/utils';
-import { autoAlign } from 'pitaka/utils';
+import {pinPos,posPin,patchBuf, autoChineseBreak,ensureChunkHasPN,fromChineseNumber
+,ensurefirstLineHasPN,autoAlign} from 'pitaka/utils';
 import {cbeta} from 'pitaka/format';
 import Errata from './errata.js';
 await nodefs;
 const rootdir='N/';
-const desfolder='off/';
 const scfolder='../sc/pli/'
 const bookcode=process.argv[2]||"dn1"
 const folders=getVols(bookcode).map(v=>'N'+v +'/*') ;
 const files=filesFromPattern( folders,'N');
 const {g}=cbeta.onOpen;
+console.log('node gen filepat [p]');
+let paramode=process.argv[3]==='p';
+const desfolder=paramode?'par/':'off/';
+
 const ctx={started:false,hide:0,isheader:true,header:'',paratext:'', lb:'', notes:[]};
 
 const bkpf=bookcode.replace(/\d+$/,'');
@@ -44,18 +47,42 @@ const onText=(str,ctx)=>{
     }
 }
 
+const applyInserts=lb=>{
+    let text=ctx.paratext, count=0,insertpoint=0;
+    let newpara=false;
+    while (true) {
+        let insert=pnjson[lb+(count?'+'+count:'')];
+        if (!insert) break;
+        count++
+        if (typeof insert!=='string') {
+            insertpoint=posPin(text, insert[1]);
+            insert=insert[0];
+            if (insertpoint) insert='\n'+insert;    
+        } else if (insert.indexOf("^n")>-1) {
+            ctx.compact=true;
+            newpara=true;
+        }
+
+        text=text.substr(0,insertpoint)
+            +(insert?insert:'')
+            +text.substr(insertpoint);
+
+    }
+    return [text,newpara];
+}
+
 const onOpen={
     g,
     note:(el,ctx)=>{
         ctx.isnote=true;
         ctx.notetext='';
     },
+    'l':(el,ctx)=>{
+        if (!ctx.isheader) ctx.paratext+='\n^sz '
+    },
     milestone:(el,ctx)=>{ctx.started=true;},
     'pb':(el,ctx)=>{
         ctx.vol=el.attrs['xml:id'].substr(1,2);
-    },
-    'l':(el,ctx)=>{
-        ctx.paratext+='\n^sz '
     },
     'p':(el,ctx)=>{
         if (el.attrs["cb:place"]=="inline") {
@@ -77,38 +104,28 @@ const onOpen={
     'lb':(el,ctx)=>{
         const prevlb=ctx.lb;
         ctx.lb=ctx.vol+'p'+el.attrs.n;
-        let insertpoint=0;
         let lbnow=pnjson[ctx.lb];
         let insert=pnjson[prevlb];
         if (!insert&&!lbnow) return;
         if (lbnow && typeof lbnow!=='string') lbnow=lbnow[0];
-        if (insert && typeof insert!=='string') {
-            insertpoint=posPin(ctx.paratext, insert[1]);
-            insert=insert[0];
-            if (insertpoint) insert='\n'+insert;
-        }
-        const text=ctx.paratext.substr(0,insertpoint)
-            +(insert?insert:'')
-            +ctx.paratext.substr(insertpoint);
-            const m=insert&&insert.match(/\^bk#([a-z\d]+)/);
+        
+        let [text,newpara]=applyInserts(prevlb);
+
+        const m=insert&&typeof insert==='string' &&insert.match(/\^bk#([a-z\d]+)/);
         if(m) {
             if(bkid)writeOutput();
             bkid=m[1];
         }
 
         if (text) {
-            let emitnl=false;
-            if (insert&&insert.indexOf("^n")>-1) {
-                ctx.compact=true;
-                emitnl=true;
-            }
-            outcontent += (emitnl?("\n"+ctx.header):'')+text ;
-            if (emitnl) ctx.header='';
+            outcontent += (newpara?"\n"+ctx.header:'')+text ;
+            if (newpara) ctx.header='';
             ctx.paratext='';
         }
     }
 }
 const onClose={
+
     note:(el,ctx)=>{
         ctx.notes.push(ctx.notetext);
         const notetag='^f'+ctx.notes.length;
@@ -126,14 +143,22 @@ const onClose={
     'body':()=>{ctx.started=false}
 };
 
-const writeOutput=()=>{
-    if (!outcontent.length)return;
-    let lines=outcontent.split(/\r?\n/);    
+const autoBreak=(lines,bkid)=>{
     lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
     const sclines=readTextLines(scfolder+bkid+'.off');
-    lines=autoAlign(lines,sclines);
-    if (bkid && writeChanged(desfolder+bkid+'.off',lines.join('\n'))) {
-        console.log('written',bkid,lines.length);
+    lines=autoAlign(lines,sclines,bkid);
+    return lines;
+}
+const writeOutput=()=>{
+    if (!outcontent.length)return;
+    outcontent= outcontent.replace(/\n\n\^n/g,'\n^n');
+    
+    let lines=outcontent.trimLeft().split(/\r?\n/);   
+    if (!paramode) lines=autoBreak(lines,bkid); 
+    outcontent=lines.join('\n');
+    outcontent=ensurefirstLineHasPN(outcontent);
+    if (bkid && writeChanged(desfolder+bkid+'.off',outcontent)) {
+        console.log('written',desfolder+bkid,lines.length);
     }
     const notes=ctx.notes.map((t,idx)=>{
         return '^fn'+(idx+1)+' '+t;

@@ -1,11 +1,11 @@
 import { walkDOMOfftext,DOMFromString,xpath,onOfftext } from "pitaka/xmlparser";
-import {getFormat} from "pitaka/format"
 import { filesFromPattern, nodefs, writeChanged } from "pitaka/cli";
+import {cbeta} from 'pitaka/format';
 await nodefs;
 const rootdir='N/';
-const pat=process.argv[2]||"N0[6789]/*,N1?/*,N2[012345]/*"
+const pat=process.argv[2]||"N0[6789]/*,N1?/*,N2[01234567]/*"
 const files=filesFromPattern(pat,'N');
-const cbeta=getFormat("cbeta");
+
 
 const {g}=cbeta.onOpen;
 const ctx={hide:0};
