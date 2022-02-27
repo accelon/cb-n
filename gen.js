@@ -145,7 +145,7 @@ const onClose={
 
 const autoBreak=(lines,bkid)=>{
     lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
-    const sclines=readTextLines(scfolder+bkid+'.off');
+    const sclines=readTextLines(scfolder+bkid+'.sc.off');
     lines=autoAlign(lines,sclines,bkid);
     return lines;
 }
@@ -157,14 +157,14 @@ const writeOutput=()=>{
     if (!paramode) lines=autoBreak(lines,bkid); 
     outcontent=lines.join('\n');
     outcontent=ensurefirstLineHasPN(outcontent);
-    if (bkid && writeChanged(desfolder+bkid+'.off',outcontent)) {
+    if (bkid && writeChanged(desfolder+bkid+'.cb.off',outcontent)) {
         console.log('written',desfolder+bkid,lines.length);
     }
     const notes=ctx.notes.map((t,idx)=>{
         return '^fn'+(idx+1)+' '+t;
     })
     notes.unshift('^bk#'+bkid+'.notes');
-    if (bkid && writeChanged(desfolder+bkid+'.note.off',notes.join('\n'))){
+    if (bkid && writeChanged(desfolder+bkid+'.n.notes',notes.join('\n'))){
         //written note
     }
     bkid='';
