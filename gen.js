@@ -3,10 +3,10 @@
 */
 
 import { walkDOMOfftext,DOMFromString,xpath } from 'pitaka/xmlparser';
-import { filesFromPattern, nodefs, readTextContent, readTextLines, writeChanged } from 'pitaka/cli';
+import {kluer, filesFromPattern, nodefs, readTextContent, readTextLines, writeChanged } from 'pitaka/cli';
 import {getVols} from './bookcode.js';
-import {pinPos,posPin,patchBuf, autoChineseBreak,ensureChunkHasPN,fromChineseNumber
-,ensurefirstLineHasPN,autoAlign} from 'pitaka/utils';
+import {patchBuf, fromChineseNumber } from 'pitaka/utils';
+import {posPin,autoChineseBreak,ensurefirstLineHasPN,autoAlign, combineHeaders} from 'pitaka/align';
 import {cbeta} from 'pitaka/format';
 import Errata from './errata.js';
 await nodefs;
@@ -15,6 +15,7 @@ const scfolder='../sc/pli/'
 const bookcode=process.argv[2]||"dn1"
 const folders=getVols(bookcode).map(v=>'N'+v +'/*') ;
 const files=filesFromPattern( folders,'N');
+const {yellow,red} =kluer;
 const {g}=cbeta.onOpen;
 console.log('node gen filepat [p]');
 let paramode=process.argv[3]==='p';
@@ -143,28 +144,33 @@ const onClose={
     'body':()=>{ctx.started=false}
 };
 
-const autoBreak=(lines,bkid)=>{
-    lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
-    const sclines=readTextLines(scfolder+bkid+'.sc.off');
-    lines=autoAlign(lines,sclines,bkid);
-    return lines;
-}
+
 const writeOutput=()=>{
     if (!outcontent.length)return;
     outcontent= outcontent.replace(/\n\n\^n/g,'\n^n');
-    
+
     let lines=outcontent.trimLeft().split(/\r?\n/);   
-    if (!paramode) lines=autoBreak(lines,bkid); 
+    
+    const sclines=readTextLines(scfolder+bkid+'.ms.off');
+    if (!paramode) {
+        lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
+        lines=autoAlign(lines,sclines,bkid);
+    }
     outcontent=lines.join('\n');
-    outcontent=ensurefirstLineHasPN(outcontent);
-    if (bkid && writeChanged(desfolder+bkid+'.cb.off',outcontent)) {
-        console.log('written',desfolder+bkid,lines.length);
+    const outfn=desfolder+bkid+'.cb.off'
+    const linecountwarning=lines.length!==sclines.length?red("!="+sclines.length):'';
+    if (bkid && writeChanged(outfn,outcontent)) {
+        console.log('written',outfn,lines.length,linecountwarning);
+    } else {
+        console.log('same',outfn,lines.length,linecountwarning);
     }
     const notes=ctx.notes.map((t,idx)=>{
         return '^fn'+(idx+1)+' '+t;
     })
     notes.unshift('^bk#'+bkid+'.notes');
-    if (bkid && writeChanged(desfolder+bkid+'.n.notes',notes.join('\n'))){
+    
+
+    if (bkid && writeChanged(desfolder+bkid+'.cb.notes',notes.join('\n'))){
         //written note
     }
     bkid='';
