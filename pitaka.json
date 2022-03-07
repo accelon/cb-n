@@ -10,6 +10,7 @@
 		"mc":["Label",{"caption":"缺字"}],
 		"w":["Label",{"caption":"巴利"}]
 	},
+    "notesjson":"f",
 	"homepage":"https://github.com/accelon/cb-n",
 	"files":"dn?.cb.off,mn?.cb.off,sn?.cb.off,an?.cb.off,an??.cb.off"
 }
