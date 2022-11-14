@@ -1,6 +1,4 @@
-import {pinPos} from 'pitaka/align'
-import {stripLinesNote} from 'pitaka/utils'
-import { linePN } from 'pitaka/offtext';
+import {linePN,stripLinesNote,pinPos} from 'ptk/nodebundle.cjs'
 export const stripNotes=(lines,ctx)=>{
     const notes=ctx.notes;
     const NoteIdx={};

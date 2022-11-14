@@ -4,7 +4,7 @@
 	"description":"基於CBETA DVD 2018",
 	"template":"cs",
     "lang":"zh",
-	"label":"csbk,lg,z,m",
+	"label":"csbk,lg,m",
 	"labels":{
 		"p":["LabelPage",{"reset":"p"}], 
 		"mc":["Label",{"caption":"缺字"}],

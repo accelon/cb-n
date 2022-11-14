@@ -1,9 +1,7 @@
-﻿import { walkDOMOfftext,DOMFromString,xpath } from 'pitaka/xmlparser';
-import {kluer, filesFromPattern, nodefs, readTextContent, readTextLines, writeChanged } from 'pitaka/cli';
+﻿import {cbeta,walkDOMOfftext,DOMFromString,xpath, filesFromPattern, nodefs, 
+    readTextContent, readTextLines, writeChanged ,patchBuf,autoChineseBreak,autoAlign, combineHeaders} from 'ptk/nodebundle.cjs';
+import {red} from 'ptk/cli/colors.cjs'
 import {getVols} from './bookcode.js';
-import {patchBuf } from 'pitaka/utils';
-import {autoChineseBreak,autoAlign, combineHeaders} from 'pitaka/align';
-import {cbeta} from 'pitaka/format';
 import Errata from './errata.js';
 import {stripNotes} from './notes.js'
 import {onOpen,onClose,onText} from './parser.js'
@@ -13,14 +11,13 @@ const scfolder='../sc/pli/'
 const bookcode=process.argv[2]||"dn1"
 const folders=getVols(bookcode).map(v=>'N'+v +'/*') ;
 const files=filesFromPattern( folders,'N');
-const {yellow,red} =kluer;
 
 console.log('node gen filepat [p]');
 let paramode=process.argv[3]==='p';
-const desfolder=paramode?'par/':'off/';
+const desfolder=paramode?'par/':'cs-yh.offtext/';
 const bkpf=bookcode.replace(/\d+$/,'');
 
-const ctx={started:false,hide:0,isheader:true,header:'',paratext:'', lb:'', notes:[], outcontent:'',bkid:''};
+const ctx={onText,started:false,hide:0,isheader:true,header:'',paratext:'', lb:'', notes:[], outcontent:'',bkid:''};
 ctx.pnjson=JSON.parse(readTextContent('inserts/'+bkpf+'.json').replace(/\/\/.+/g,''));
 
 
@@ -40,7 +37,7 @@ ctx.writeOutput=()=>{
     lines=stripNotes(lines,ctx);
 
     ctx.outcontent=lines.join('\n');
-    const outfn=desfolder+ctx.bkid+'.cb.off'
+    const outfn=desfolder+ctx.bkid+'.yh.off'
     const linecountwarning=lines.length!==sclines.length?red("!="+sclines.length):'';
     if (ctx.bkid && writeChanged(outfn,ctx.outcontent)) {
         console.log('written',outfn,lines.length,linecountwarning);
@@ -65,7 +62,7 @@ files.forEach(file=>{
     const el=DOMFromString(buf);
     const body=xpath(el,'text/body');
     ctx.charmap=cbeta.buildCharmap(xpath(el,'teiHeader/encodingDesc/charDecl'));
-    walkDOMOfftext(body,ctx,onOpen, onClose,onText).trim();
+    walkDOMOfftext(body,ctx,onOpen, onClose).trim();
 });
 
 ctx.writeOutput();

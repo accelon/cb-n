@@ -1,7 +1,5 @@
-import {cbeta} from 'pitaka/format';
-import {fromChineseNumber } from 'pitaka/utils';
+import {posPin,cbeta,fromChineseNumber} from 'ptk/nodebundle.cjs';
 const {g}=cbeta.onOpen;
-import {posPin} from 'pitaka/align';
 
 export const onText=(str,ctx)=>{
     if (!ctx.hide && ctx.started) {
@@ -10,7 +8,7 @@ export const onText=(str,ctx)=>{
             ctx.notetext+=t;
         } else if (ctx.isheader && t) {
             if (ctx.mululevel) {
-                ctx.header+='^z'+ctx.mululevel+'['+t+']';
+                ctx.header+='^z'+ctx.mululevel+'('+t+')';
                 ctx.mululevel=0;
             } else {
                 // ctx.header+='^h['+t+']';
