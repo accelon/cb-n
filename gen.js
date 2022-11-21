@@ -1,4 +1,4 @@
-﻿import {cbeta,walkDOMOfftext,DOMFromString,xpath, filesFromPattern, nodefs, 
+﻿import {meta_cbeta,walkDOMOfftext,DOMFromString,xpath, filesFromPattern, nodefs, 
     readTextContent, readTextLines, writeChanged ,patchBuf,autoChineseBreak,autoAlign, combineHeaders} from 'ptk/nodebundle.cjs';
 import {red} from 'ptk/cli/colors.cjs'
 import {getVols} from './bookcode.js';
@@ -14,7 +14,7 @@ const files=filesFromPattern( folders,'N');
 
 console.log('node gen filepat [p]');
 let paramode=process.argv[3]==='p';
-const desfolder=paramode?'par/':'cs-yh.offtext/';
+const desfolder=paramode?'par/':'off/';
 const bkpf=bookcode.replace(/\d+$/,'');
 
 const ctx={onText,started:false,hide:0,isheader:true,header:'',paratext:'', lb:'', notes:[], outcontent:'',bkid:''};
@@ -61,7 +61,7 @@ files.forEach(file=>{
     const buf=patchBuf(readTextContent(rootdir+file),Errata[file],file);
     const el=DOMFromString(buf);
     const body=xpath(el,'text/body');
-    ctx.charmap=cbeta.buildCharmap(xpath(el,'teiHeader/encodingDesc/charDecl'));
+    ctx.charmap=meta_cbeta.buildCharmap(xpath(el,'teiHeader/encodingDesc/charDecl'));
     walkDOMOfftext(body,ctx,onOpen, onClose).trim();
 });
 
