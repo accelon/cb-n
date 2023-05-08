@@ -1,11 +1,11 @@
-import {cbeta, walkDOMOfftext,DOMFromString,xpath,
+import {meta_cbeta, walkDOMOfftext,DOMFromString,xpath,
     filesFromPattern, nodefs, writeChanged } from "ptk/nodebundle.cjs";
 await nodefs;
 const rootdir='N/';
 const pat=process.argv[2]||"N0[6789]/*,N1?/*,N2[01234567]/*"
 const files=filesFromPattern(pat,'N');
 
-const {g}=cbeta.onOpen;
+const {g}=meta_cbeta.onOpen;
 const onText=(t,ctx,started)=>{
     if (!started) return ''
     return t.trim();
@@ -41,7 +41,7 @@ files.forEach(file=>{
     const buf=fs.readFileSync(rootdir+file,'utf8');
     const el=DOMFromString(buf);
     const body=xpath(el,'text/body');
-    ctx.charmap=cbeta.buildCharmap(xpath(el,'teiHeader/encodingDesc/charDecl'));
+    ctx.charmap=meta_cbeta.buildCharMap(xpath(el,'teiHeader/encodingDesc/charDecl'));
     ctx.started=false ;//hide text until milestone
     walkDOMOfftext(body,ctx,onOpen, onClose);
     lines.push(ctx.out.trim());

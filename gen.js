@@ -8,7 +8,7 @@ import {onOpen,onClose,onText} from './parser.js'
 await nodefs;
 const rootdir='N/';
 const scfolder='../sc/pli/'
-const bookcode=process.argv[2]||"dn1"
+const bookcode=process.argv[2]||"dn"
 const folders=getVols(bookcode).map(v=>'N'+v +'/*') ;
 const files=filesFromPattern( folders,'N');
 
@@ -37,7 +37,7 @@ ctx.writeOutput=()=>{
     lines=stripNotes(lines,ctx);
 
     ctx.outcontent=lines.join('\n');
-    const outfn=desfolder+ctx.bkid+'.yh.off'
+    const outfn=desfolder+ctx.bkid+'.yh.ori.off'
     const linecountwarning=lines.length!==sclines.length?red("!="+sclines.length):'';
     if (ctx.bkid && writeChanged(outfn,ctx.outcontent)) {
         console.log('written',outfn,lines.length,linecountwarning);
@@ -61,7 +61,7 @@ files.forEach(file=>{
     const buf=patchBuf(readTextContent(rootdir+file),Errata[file],file);
     const el=DOMFromString(buf);
     const body=xpath(el,'text/body');
-    ctx.charmap=meta_cbeta.buildCharmap(xpath(el,'teiHeader/encodingDesc/charDecl'));
+    ctx.charmap=meta_cbeta.buildCharMap(xpath(el,'teiHeader/encodingDesc/charDecl'));
     walkDOMOfftext(body,ctx,onOpen, onClose).trim();
 });
 

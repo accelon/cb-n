@@ -6,7 +6,7 @@
     產生和原書一致的"本文tab冊頁欄行"代碼。
 
     node gen
-    產生 offtext 格式（只按 cs 分段，未分句) 到 cs-yh.offtext
+    產生 offtext 格式（只按 cs 分段，未分句) 到 off  (要放進github ，之後再做 pin)
 
-    ptk js cs-yh  
+    ptk js cs-yh 
     產生和 cs 對齊的元亨譯文
