@@ -11,7 +11,6 @@ const scfolder='../sc/pli/'
 const bookcode=process.argv[2]||"dn"
 const folders=getVols(bookcode).map(v=>'N'+v +'/*') ;
 const files=filesFromPattern( folders,'N');
-
 console.log('node gen filepat [p]');
 let paramode=process.argv[3]==='p';
 const desfolder=paramode?'par/':'off/';
@@ -26,19 +25,24 @@ ctx.writeOutput=()=>{
     ctx.outcontent= ctx.outcontent.replace(/\n\n\^n/g,'\n^n');
 
     let lines=ctx.outcontent.trimStart().split(/\r?\n/);   
-    
-    const sclines=readTextLines(scfolder+ctx.bkid+'.ms.off');
-    if (!paramode) {
-        lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
-        lines=combineHeaders(lines.join('\n')).split('\n')
-        lines=autoAlign(lines,sclines,ctx.bkid);
-    }
+    let sclines=null;
+    const msfile=scfolder+ctx.bkid+'.ms.off';
+    if (fs.existsSync(msfile)){
+	    sclines=readTextLines(msfile);
+	    if (!paramode) {
+	        lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
+	        lines=combineHeaders(lines.join('\n')).split('\n')
+	        lines=autoAlign(lines,sclines,ctx.bkid);
+	    }
+   } else {
+       lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
+   }
 
     lines=stripNotes(lines,ctx);
 
     ctx.outcontent=lines.join('\n');
     const outfn=desfolder+ctx.bkid+'.yh.ori.off'
-    const linecountwarning=lines.length!==sclines.length?red("!="+sclines.length):'';
+    const linecountwarning=lines.length!==sclines?.length?red("!="+sclines?.length):'';
     if (ctx.bkid && writeChanged(outfn,ctx.outcontent)) {
         console.log('written',outfn,lines.length,linecountwarning);
     } else {
@@ -58,7 +62,8 @@ ctx.writeOutput=()=>{
 
 
 files.forEach(file=>{
-    const buf=patchBuf(readTextContent(rootdir+file),Errata[file],file);
+    const buf=meta_cbeta.tidy(patchBuf(readTextContent(rootdir+file),Errata[file],file));
+    
     const el=DOMFromString(buf);
     const body=xpath(el,'text/body');
     ctx.charmap=meta_cbeta.buildCharMap(xpath(el,'teiHeader/encodingDesc/charDecl'));

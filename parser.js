@@ -68,7 +68,14 @@ export const onOpen={
                 ctx.paratext+='^m'+fromChineseNumber(cn[1]);
                 ctx.compact=true;
             }
+        } else { //for CB-N
+            const id=el.attrs["xml:id"];
+            if (id) {
+                ctx.paratext+='\n^p'+id.slice(2);
+                ctx.compact=true;
+            }
         }
+        
     },
     'cb:mulu':(el,ctx)=>{if(ctx.started&&!ctx.hide) {
         ctx.isheader=true
