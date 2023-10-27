@@ -1,5 +1,4 @@
 import {posPin,meta_cbeta,fromChineseNumber} from 'ptk/nodebundle.cjs';
-const {g}=meta_cbeta.onOpen;
 
 export const onText=(str,ctx)=>{
     if (!ctx.hide && ctx.started) {
@@ -47,7 +46,14 @@ const applyInserts=(lb,ctx)=>{
 }
 
 export const onOpen={
-    g,
+    g:(el,ctx)=>{
+        const uni=ctx.charmap[el.attrs.ref.slice(1)]
+        if (uni) ctx.paratext+=uni;
+        else {
+            ctx.paratext+'^mc'+el.attrs.ref.slice(3);
+            ctx.compact=true;
+        }
+    },
     note:(el,ctx)=>{
         ctx.isnote=true;
         ctx.notetext='';
@@ -62,7 +68,8 @@ export const onOpen={
     'rdg':(el,ctx) =>ctx.hide=true,
     'p':(el,ctx)=>{
         if (el.attrs["cb:place"]=="inline") {
-            const cn=ctx.paratext.match(/([一二三四五六七八九十百千○〇]+)$/);
+            //might have note maker after , see pN06p0204a1301
+            const cn=ctx.paratext.match(/([一二三四五六七八九十百千○〇]+[⚓\d]*)$/);
             if (cn) {
                 ctx.paratext=ctx.paratext.substr(0,ctx.paratext.length-cn[1].length);
                 ctx.paratext+='^m'+fromChineseNumber(cn[1]);
@@ -71,7 +78,7 @@ export const onOpen={
         } else { //for CB-N
             const id=el.attrs["xml:id"];
             if (id) {
-                ctx.paratext+='\n^p'+id.slice(2);
+                ctx.paratext+='\n';//^p'+id.slice(2);
                 ctx.compact=true;
             }
         }
@@ -108,6 +115,7 @@ export const onOpen={
     }
 }
 export const onClose={
+   
     note:(el,ctx)=>{
         if (!ctx.hide)  {
             if (el.attrs.type=='star') ctx.notetext+='★'

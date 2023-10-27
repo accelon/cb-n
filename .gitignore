@@ -6,7 +6,9 @@ cb-n
 *.off
 *.txt
 *.7z
-off
 cs-yh.offtext
 cs-yh
 off-old
+off-ori
+*.aligned
+sent.tsv

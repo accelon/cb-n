@@ -5,6 +5,7 @@ export const stripNotes=(lines,ctx)=>{
     notes.forEach( (note,idx)=>{
         NoteIdx[idx+1]=note; //nid is one base, see parser.js::onClose note()
     });
+
     lines=stripLinesNote(lines,NoteIdx);
 
     notes.forEach(note=>{
