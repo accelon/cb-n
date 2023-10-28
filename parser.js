@@ -22,11 +22,14 @@ export const onText=(str,ctx)=>{
 }
 
 const applyInserts=(lb,ctx)=>{
-    let text=ctx.paratext, count=0,insertpoint=0;
+    let text=ctx.paratext, 
+    count=0,//to allow multiple insert in one lb 
+    insertpoint=0;
     let newpara=false;
     while (true) {
         let insert=ctx.pnjson[lb+(count?'+'+count:'')];
         if (!insert) break;
+        
         count++
         if (typeof insert!=='string') {
             insertpoint=posPin(text, insert[1]);
@@ -36,11 +39,10 @@ const applyInserts=(lb,ctx)=>{
             ctx.compact=true;
             newpara=true;
         }
-
+        insert=insert.replace('^end','');//a marker to tell writeOutput
         text=text.substring(0,insertpoint)
             +(insert?insert:'')
             +text.substring(insertpoint);
-
     }
     return [text,newpara];
 }
@@ -69,10 +71,10 @@ export const onOpen={
     'p':(el,ctx)=>{
         if (el.attrs["cb:place"]=="inline") {
             //might have note maker after , see pN06p0204a1301
-            const cn=ctx.paratext.match(/([一二三四五六七八九十百千○〇]+[⚓\d]*)$/);
+            const cn=ctx.paratext.match(/([一二三四五六七八九十百千○〇]+)([⚓\d]*)$/);
             if (cn) {
-                ctx.paratext=ctx.paratext.substr(0,ctx.paratext.length-cn[1].length);
-                ctx.paratext+='^m'+fromChineseNumber(cn[1]);
+                ctx.paratext=ctx.paratext.substr(0,ctx.paratext.length-cn[1].length-(cn[2]?.length||0) );
+                ctx.paratext+='^m'+fromChineseNumber(cn[1])+(cn[2]?cn[2]:'');
                 ctx.compact=true;
             }
         } else { //for CB-N
@@ -101,10 +103,13 @@ export const onOpen={
         
         let [text,newpara]=applyInserts(prevlb,ctx);
 
-        const m=insert&&typeof insert==='string' &&insert.match(/\^bk#([a-z\d]+)/);
-        if(m) {
-            if(ctx.bkid) ctx.writeOutput();
-            ctx.bkid=m[1];
+        if(insert && typeof insert==='string') {
+            const m=insert.match(/\^bk#([a-z\d]+)/);
+            if (m) {
+                ctx.bkid=m[1];
+            } else if (~insert.indexOf('^end')){
+                ctx.writeOutput();
+            }
         }
 
         if (text) {
@@ -115,20 +120,18 @@ export const onOpen={
     }
 }
 export const onClose={
-   
     note:(el,ctx)=>{
-        if (!ctx.hide)  {
+        if (!ctx.hide && el.attrs.resp=="NanChuan") {  //不要cbeta 的
             if (el.attrs.type=='star') ctx.notetext+='★'
-            ctx.notes.push([-1,0,ctx.notetext]); //y, pin, val
+            ctx.notes.push([0,ctx.notetext]); //y, pin, val
             const notetag='⚓'+ctx.notes.length;
             if (ctx.isheader) {
                 ctx.header+=notetag;
-            } else if (ctx.paratext) {
+            } else {//if (ctx.paratext) {
                 ctx.paratext+=notetag;
             }    
             ctx.compact=true;
         }
-
         ctx.notetext='';
         ctx.isnote=false;
     },

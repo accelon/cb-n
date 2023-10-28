@@ -1,4 +1,4 @@
-﻿import {meta_cbeta,walkDOMOfftext,DOMFromString,xpath, filesFromPattern, nodefs, 
+﻿import {meta_cbeta,walkDOMOfftext,DOMFromString,xpath, filesFromPattern, nodefs, aligncrlf,
     readTextContent, readTextLines, writeChanged ,patchBuf,autoChineseBreak,autoAlign, combineHeaders} from 'ptk/nodebundle.cjs';
 import {red} from 'ptk/cli/colors.cjs'
 import {getVols} from './bookcode.js';
@@ -6,7 +6,7 @@ import Errata from './errata.js';
 import {onOpen,onClose,onText} from './parser.js'
 await nodefs;
 const rootdir='N/';
-const scfolder='../sc/sc-pli.offtext/'
+const guidefolder='./off/'
 const bookcode=process.argv[2]||"dn"
 const folders=getVols(bookcode).map(v=>'N'+v +'/*') ;
 const files=filesFromPattern( folders,'N');
@@ -30,29 +30,24 @@ const replaceNoteMarker=(lines,opts={})=>{
     return lines;
 }
 ctx.writeOutput=()=>{
-    if (!ctx.outcontent.length)return;
+    if (!ctx.outcontent.length||!ctx.bkid)return;
     ctx.outcontent= ctx.outcontent.replace(/\n\n\^n/g,'\n^n');
 
     let lines=ctx.outcontent.trimStart().split(/\r?\n/);   
-    let sclines=null;
-    const msfile=scfolder+ctx.bkid+'.ms.off';
-    if (fs.existsSync(msfile)){
-	    sclines=readTextLines(msfile);
-	    if (!paramode) {
-	        lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
-	        lines=combineHeaders(lines.join('\n')).split('\n')
-	        lines=autoAlign(lines,sclines,ctx.bkid);
-	    }
-   } else {
-       lines=lines.map(autoChineseBreak).join('\n').trim().split('\n');
-   }
+    const guidefile=guidefolder+ctx.bkid+'.yh.off';
+   
+    const guidecontent=readTextContent(guidefile);
+    const guidelines=guidecontent.split('\n');
+    if (!paramode) {
+        lines=aligncrlf(lines.join('\n'), guidecontent);
+    }
 
     //lines=stripNotes(lines,ctx);  pin note
     lines=replaceNoteMarker(lines);
 
     ctx.outcontent=lines.join('\n');
     const outfn=desfolder+ctx.bkid+'.yh.off'
-    const linecountwarning=lines.length!==sclines?.length?red("!="+sclines?.length):'';
+    const linecountwarning=lines.length!==guidelines?.length?red("!="+guidelines?.length):'';
     if (ctx.bkid && writeChanged(outfn,ctx.outcontent)) {
         console.log('written',outfn,lines.length,linecountwarning);
     } else {
@@ -61,7 +56,7 @@ ctx.writeOutput=()=>{
 
     //const noteout='['+ctx.notes.map( ([y,pin,val]) =>JSON.stringify({y,pin,val})).join(",\n")+']';
     const noteout=ctx.notes.map( (it,idx)=>{
-        return idx+1+'\t'+it[2];
+        return (idx+1)+'\t'+it[1];
     });
     noteout.unshift('^:<name='+ctx.bkid+' footnote=bk>\tnote');
     ctx.bkid && writeChanged(desfolder+ctx.bkid+'.yh.tsv',noteout.join('\n'),true)

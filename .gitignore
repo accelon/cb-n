@@ -12,3 +12,4 @@ off-old
 off-ori
 *.aligned
 sent.tsv
+*.yh.tsv
