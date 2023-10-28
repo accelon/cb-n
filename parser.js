@@ -1,4 +1,4 @@
-import {posPin,meta_cbeta,fromChineseNumber} from 'ptk/nodebundle.cjs';
+import {posPin,fromChineseNumber} from 'ptk/nodebundle.cjs';
 
 export const onText=(str,ctx)=>{
     if (!ctx.hide && ctx.started) {
