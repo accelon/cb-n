@@ -12,6 +12,11 @@
     產生和 cs 對齊的元亨譯文
     
     
+    ptk crlf off-ori\sn1.yh.off 
+    將 off\sn1.yh.off 的換行 轉移到 新產生的 off-ori ，並產生  sn1.yh-crlf.off，
+    檢查無誤後，覆蓋到 off ，未來有數據源更動時， note gen 再 做一次 ptk crlf ，將可將換行與最新文字整合。
+    
+    
 焦洪波
 mn2
 9695-9702   内容不符
