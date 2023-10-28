@@ -23,7 +23,7 @@ const replaceNoteMarker=(lines,opts={})=>{
     const regex=new RegExp(marker+'([0-9]+)','g');
     for (let i=0;i<lines.length;i++) {
         let line=lines[i].replace(regex,(m,m1)=>{
-            return '';//'^f'+m1+'<>';
+            return '^f'+m1+'<>';
         })
         lines[i]=line.replace(/<>[ \da-zA-Z#_@~]/g,' ').replace(/<>/g,'');
     }
